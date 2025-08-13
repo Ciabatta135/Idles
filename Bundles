@@ -1,69 +1,46 @@
-local Players = game:GetService("Players")
+-- LocalScript in StarterPlayer > StarterPlayerScripts
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
 local UserInputService = game:GetService("UserInputService")
-local plr = Players.LocalPlayer
 
--- SETTINGS
-local normalSpeed = 16       -- Normal walkspeed
-local sprintSpeed = 32       -- Sprint walkspeed
-local sprintAnimId = "rbxassetid://70636286183373" -- Replace with your sprint animation ID
+-- Settings
+local walkSpeed = 16 -- default speed
+local runSpeed = 32  -- running speed
+local animationId = "rbxassetid://70636286183373"
 
-local sprinting = false
-local sprintAnimTrack
+-- Animation setup
+local anim = Instance.new("Animation")
+anim.AnimationId = animationId
+local track = humanoid:LoadAnimation(anim)
 
--- Load character
-local function onCharacterAdded(char)
-	local humanoid = char:WaitForChild("Humanoid")
+-- Running state
+local running = false
 
-	-- Load the sprint animation
-	local sprintAnim = Instance.new("Animation")
-	sprintAnim.AnimationId = sprintAnimId
-	sprintAnimTrack = humanoid:LoadAnimation(sprintAnim)
-	sprintAnimTrack.Priority = Enum.AnimationPriority.Action
-end
-
-plr.CharacterAdded:Connect(onCharacterAdded)
-if plr.Character then
-	onCharacterAdded(plr.Character)
-end
-
--- Handle sprint start
-local function startSprinting()
-	if sprinting then return end
-	sprinting = true
-
-	local humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid")
-	if humanoid then
-		humanoid.WalkSpeed = sprintSpeed
-		if sprintAnimTrack then
-			sprintAnimTrack:Play()
-		end
-	end
-end
-
--- Handle sprint stop
-local function stopSprinting()
-	if not sprinting then return end
-	sprinting = false
-
-	local humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid")
-	if humanoid then
-		humanoid.WalkSpeed = normalSpeed
-		if sprintAnimTrack then
-			sprintAnimTrack:Stop()
-		end
-	end
-end
-
--- Detect Shift press
-UserInputService.InputBegan:Connect(function(input, isProcessed)
-	if isProcessed then return end
+-- Input detection
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.LeftShift then
-		startSprinting()
+		if not running then
+			running = true
+			humanoid.WalkSpeed = runSpeed
+			if not track.IsPlaying then
+				track:Play()
+			end
+		end
 	end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
 	if input.KeyCode == Enum.KeyCode.LeftShift then
-		stopSprinting()
+		if running then
+			running = false
+			humanoid.WalkSpeed = walkSpeed
+			if track.IsPlaying then
+				track:Stop()
+			end
+		end
 	end
 end)
