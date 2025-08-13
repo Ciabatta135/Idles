@@ -1,46 +1,50 @@
--- LocalScript in StarterPlayer > StarterPlayerScripts
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+local function overrideRunAnimation()
+	local char = plr.Character or plr.CharacterAdded:Wait()
+	local animate = char:WaitForChild("Animate")
 
-local UserInputService = game:GetService("UserInputService")
+	-- Temporarily disable Animate
+	animate.Disabled = true
 
--- Settings
-local walkSpeed = 16 -- default speed
-local runSpeed = 32  -- running speed
-local animationId = "rbxassetid://70636286183373"
-
--- Animation setup
-local anim = Instance.new("Animation")
-anim.AnimationId = animationId
-local track = humanoid:LoadAnimation(anim)
-
--- Running state
-local running = false
-
--- Input detection
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		if not running then
-			running = true
-			humanoid.WalkSpeed = runSpeed
-			if not track.IsPlaying then
-				track:Play()
-			end
+	-- Find the run animation object
+	local runAnimFolder = animate:FindFirstChild("run")
+	if runAnimFolder then
+		local runAnim = runAnimFolder:FindFirstChild("RunAnim")
+		if runAnim then
+			runAnim.AnimationId = "rbxassetid://85811471336028" -- Replace with your animation ID
 		end
 	end
-end)
 
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		if running then
-			running = false
-			humanoid.WalkSpeed = walkSpeed
-			if track.IsPlaying then
-				track:Stop()
-			end
+	-- Re-enable Animate so changes apply
+	animate.Disabled = false
+end
+
+overrideRunAnimation()
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+local function overrideIdleAnimation()
+	local char = plr.Character or plr.CharacterAdded:Wait()
+	local animate = char:WaitForChild("Animate")
+
+	-- Disabilita Animate temporaneamente
+	animate.Disabled = true
+
+	-- Imposta il nuovo ID dell'animazione idle
+	local idleAnim = animate:FindFirstChild("idle")
+	if idleAnim then
+		local anim1 = idleAnim:FindFirstChild("Animation1")
+		if anim1 then
+			anim1.AnimationId = "rbxassetid://109728747582911" -- <--- sostituisci con un ID valido
+idleAnim:FindFirstChild("Animation2").AnimationId = "rbxassetid://109728747582911"
 		end
 	end
-end)
+
+	-- Riattiva Animate per applicare i cambiamenti
+	animate.Disabled = false
+end
+
+overrideIdleAnimation()
