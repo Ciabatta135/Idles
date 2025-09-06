@@ -38,8 +38,8 @@ local function overrideIdleAnimation()
 	if idleAnim then
 		local anim1 = idleAnim:FindFirstChild("Animation1")
 		if anim1 then
-			anim1.AnimationId = "rbxassetid://109728747582911" -- <--- sostituisci con un ID valido
-idleAnim:FindFirstChild("Animation2").AnimationId = "rbxassetid://109728747582911"
+			anim1.AnimationId = "rbxassetid://139433213852503" -- <--- sostituisci con un ID valido
+idleAnim:FindFirstChild("Animation2").AnimationId = "rbxassetid://139433213852503"
 		end
 	end
 
