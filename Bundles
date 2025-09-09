@@ -1,50 +1,51 @@
 local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
-local function overrideRunAnimation()
-	local char = plr.Character or plr.CharacterAdded:Wait()
-	local animate = char:WaitForChild("Animate")
+-- Animation IDs
+local MOVE_ANIM_ID = "rbxassetid://85811471336028"
+local IDLE_ANIM_ID = "rbxassetid://139433213852503"
 
-	-- Temporarily disable Animate
-	animate.Disabled = true
+-- Load animations
+local moveAnim = Instance.new("Animation")
+moveAnim.AnimationId = MOVE_ANIM_ID
+local moveTrack = humanoid:LoadAnimation(moveAnim)
 
-	-- Find the run animation object
-	local runAnimFolder = animate:FindFirstChild("run")
-	if runAnimFolder then
-		local runAnim = runAnimFolder:FindFirstChild("RunAnim")
-		if runAnim then
-			runAnim.AnimationId = "rbxassetid://85811471336028" -- Replace with your animation ID
+local idleAnim = Instance.new("Animation")
+idleAnim.AnimationId = IDLE_ANIM_ID
+local idleTrack = humanoid:LoadAnimation(idleAnim)
+
+-- Current playing animation
+local currentTrack = nil
+
+-- Function to stop all other animations except the one we want
+local function stopAllOtherAnimations(exceptTrack)
+	for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+		if track ~= exceptTrack then
+			track:Stop(0.2) -- fade out smoothly over 0.2 seconds
 		end
 	end
-
-	-- Re-enable Animate so changes apply
-	animate.Disabled = false
 end
 
-overrideRunAnimation()
+-- Update animation based on movement
+local function updateAnimation()
+	local moveSpeed = humanoid.MoveDirection.Magnitude
 
-local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
-
-local function overrideIdleAnimation()
-	local char = plr.Character or plr.CharacterAdded:Wait()
-	local animate = char:WaitForChild("Animate")
-
-	-- Disabilita Animate temporaneamente
-	animate.Disabled = true
-
-	-- Imposta il nuovo ID dell'animazione idle
-	local idleAnim = animate:FindFirstChild("idle")
-	if idleAnim then
-		local anim1 = idleAnim:FindFirstChild("Animation1")
-		if anim1 then
-			anim1.AnimationId = "rbxassetid://139433213852503" -- <--- sostituisci con un ID valido
-idleAnim:FindFirstChild("Animation2").AnimationId = "rbxassetid://139433213852503"
+	if moveSpeed > 0 then
+		if currentTrack ~= moveTrack then
+			stopAllOtherAnimations(moveTrack)
+			moveTrack:Play()
+			currentTrack = moveTrack
+		end
+	else
+		if currentTrack ~= idleTrack then
+			stopAllOtherAnimations(idleTrack)
+			idleTrack:Play()
+			currentTrack = idleTrack
 		end
 	end
-
-	-- Riattiva Animate per applicare i cambiamenti
-	animate.Disabled = false
 end
 
-overrideIdleAnimation()
+-- Connect the Heartbeat to update animation every frame for smooth transition
+game:GetService("RunService").Heartbeat:Connect(updateAnimation)
