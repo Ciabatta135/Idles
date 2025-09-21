@@ -5,7 +5,7 @@ local humanoid = character:WaitForChild("Humanoid")
 
 -- Animation IDs
 local MOVE_ANIM_ID = "rbxassetid://85811471336028"
-local IDLE_ANIM_ID = "rbxassetid://139433213852503"
+local IDLE_ANIM_ID = "rbxassetid://131637921120403"
 
 -- Load animations
 local moveAnim = Instance.new("Animation")
