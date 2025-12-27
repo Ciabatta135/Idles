@@ -1,134 +1,65 @@
---[[ 
-	DEBUG CUSTOM ANIMATION SCRIPT
-	Author: You
-	Location: StarterCharacterScripts
-]]
+local player = game.Players.LocalPlayer
 
-print("[ANIM DEBUG] Script started")
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-print("[ANIM DEBUG] Player:", player.Name)
-
-local character = script.Parent
-print("[ANIM DEBUG] Character loaded:", character.Name)
-
-local humanoid = character:WaitForChild("Humanoid", 5)
-if not humanoid then
-	warn("[ANIM DEBUG] Humanoid not found")
-	return
-end
-print("[ANIM DEBUG] Humanoid found")
-
-local animator = humanoid:WaitForChild("Animator", 5)
-if not animator then
-	warn("[ANIM DEBUG] Animator not found")
-	return
-end
-print("[ANIM DEBUG] Animator found")
-
--- Disable default Roblox animations
-local animate = character:FindFirstChild("Animate")
-if animate then
-	animate.Disabled = true
-	print("[ANIM DEBUG] Default Animate script disabled")
-else
-	warn("[ANIM DEBUG] Animate script NOT found")
-end
-
--- Animation IDs
+-- Your animation IDs
 local IDLE_ID = "rbxassetid://121357243986533"
-local WALK_ID = "rbxassetid://93206157668596"
+local MOVE_ID = "rbxassetid://93206157668596" -- used for walk + run
 
--- Create animations
-local idleAnim = Instance.new("Animation")
-idleAnim.AnimationId = IDLE_ID
+local function apply(character)
+	local animate = character:WaitForChild("Animate")
 
-local walkAnim = Instance.new("Animation")
-walkAnim.AnimationId = WALK_ID
+	-- ===== IDLE =====
+	local idleFolder = animate:FindFirstChild("idle")
+	if idleFolder then
+		idleFolder:ClearAllChildren()
 
-print("[ANIM DEBUG] Animation instances created")
+		local idleAnim = Instance.new("Animation")
+		idleAnim.Name = "IdleOverride"
+		idleAnim.AnimationId = IDLE_ID
 
--- Load tracks (protected)
-local successIdle, idleTrack = pcall(function()
-	return animator:LoadAnimation(idleAnim)
-end)
+		local weight = Instance.new("NumberValue")
+		weight.Name = "Weight"
+		weight.Value = 10
+		weight.Parent = idleAnim
 
-if not successIdle then
-	warn("[ANIM DEBUG] Failed to load IDLE animation")
-	return
+		idleAnim.Parent = idleFolder
+	end
+
+	-- ===== WALK =====
+	local walkFolder = animate:FindFirstChild("walk")
+	if walkFolder then
+		walkFolder:ClearAllChildren()
+
+		local walkAnim = Instance.new("Animation")
+		walkAnim.Name = "WalkOverride"
+		walkAnim.AnimationId = MOVE_ID
+
+		local weight = Instance.new("NumberValue")
+		weight.Name = "Weight"
+		weight.Value = 10
+		weight.Parent = walkAnim
+
+		walkAnim.Parent = walkFolder
+	end
+
+	-- ===== RUN (THIS IS THE IMPORTANT PART) =====
+	local runFolder = animate:FindFirstChild("run")
+	if runFolder then
+		runFolder:ClearAllChildren()
+
+		local runAnim = Instance.new("Animation")
+		runAnim.Name = "RunOverride"
+		runAnim.AnimationId = MOVE_ID
+
+		local weight = Instance.new("NumberValue")
+		weight.Name = "Weight"
+		weight.Value = 10
+		weight.Parent = runAnim
+
+		runAnim.Parent = runFolder
+	end
 end
 
-local successWalk, walkTrack = pcall(function()
-	return animator:LoadAnimation(walkAnim)
-end)
-
-if not successWalk then
-	warn("[ANIM DEBUG] Failed to load WALK animation")
-	return
+player.CharacterAdded:Connect(apply)
+if player.Character then
+	apply(player.Character)
 end
-
-print("[ANIM DEBUG] Animation tracks loaded")
-
-idleTrack.Priority = Enum.AnimationPriority.Movement
-walkTrack.Priority = Enum.AnimationPriority.Movement
-
-idleTrack.Looped = true
-walkTrack.Looped = true
-
--- Utility
-local function stopAll(reason)
-	if idleTrack.IsPlaying then
-		idleTrack:Stop()
-		print("[ANIM DEBUG] Idle stopped:", reason)
-	end
-	if walkTrack.IsPlaying then
-		walkTrack:Stop()
-		print("[ANIM DEBUG] Walk stopped:", reason)
-	end
-end
-
--- State changes
-humanoid.StateChanged:Connect(function(old, new)
-	print("[ANIM DEBUG] State changed:", old.Name, "→", new.Name)
-
-	if new == Enum.HumanoidStateType.Jumping
-	or new == Enum.HumanoidStateType.Freefall
-	or new == Enum.HumanoidStateType.Climbing
-	or new == Enum.HumanoidStateType.Swimming
-	or new == Enum.HumanoidStateType.Seated
-	or new == Enum.HumanoidStateType.Dead then
-		stopAll("state change")
-	end
-end)
-
--- Movement handler
-RunService.RenderStepped:Connect(function()
-	if humanoid.Health <= 0 then return end
-
-	local state = humanoid:GetState()
-	local moving = humanoid.MoveDirection.Magnitude > 0
-
-	-- Ground-only logic
-	if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.RunningNoPhysics then
-		if moving then
-			if not walkTrack.IsPlaying then
-				stopAll("switch to walk")
-				walkTrack:Play()
-				print("[ANIM DEBUG] Walk animation PLAYING")
-			end
-		else
-			if not idleTrack.IsPlaying then
-				stopAll("switch to idle")
-				idleTrack:Play()
-				print("[ANIM DEBUG] Idle animation PLAYING")
-			end
-		end
-	else
-		stopAll("not ground state")
-	end
-end)
-
-print("[ANIM DEBUG] Animation controller fully initialized")
