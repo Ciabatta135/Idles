@@ -1,17 +1,41 @@
--- Custom Animation Controller (LocalScript)
--- Place in StarterCharacterScripts
+--[[ 
+	DEBUG CUSTOM ANIMATION SCRIPT
+	Author: You
+	Location: StarterCharacterScripts
+]]
+
+print("[ANIM DEBUG] Script started")
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
+print("[ANIM DEBUG] Player:", player.Name)
 
 local character = script.Parent
-local humanoid = character:WaitForChild("Humanoid")
-local animator = humanoid:WaitForChild("Animator")
+print("[ANIM DEBUG] Character loaded:", character.Name)
+
+local humanoid = character:WaitForChild("Humanoid", 5)
+if not humanoid then
+	warn("[ANIM DEBUG] Humanoid not found")
+	return
+end
+print("[ANIM DEBUG] Humanoid found")
+
+local animator = humanoid:WaitForChild("Animator", 5)
+if not animator then
+	warn("[ANIM DEBUG] Animator not found")
+	return
+end
+print("[ANIM DEBUG] Animator found")
 
 -- Disable default Roblox animations
 local animate = character:FindFirstChild("Animate")
 if animate then
 	animate.Disabled = true
+	print("[ANIM DEBUG] Default Animate script disabled")
+else
+	warn("[ANIM DEBUG] Animate script NOT found")
 end
 
 -- Animation IDs
@@ -25,9 +49,28 @@ idleAnim.AnimationId = IDLE_ID
 local walkAnim = Instance.new("Animation")
 walkAnim.AnimationId = WALK_ID
 
--- Load tracks
-local idleTrack = animator:LoadAnimation(idleAnim)
-local walkTrack = animator:LoadAnimation(walkAnim)
+print("[ANIM DEBUG] Animation instances created")
+
+-- Load tracks (protected)
+local successIdle, idleTrack = pcall(function()
+	return animator:LoadAnimation(idleAnim)
+end)
+
+if not successIdle then
+	warn("[ANIM DEBUG] Failed to load IDLE animation")
+	return
+end
+
+local successWalk, walkTrack = pcall(function()
+	return animator:LoadAnimation(walkAnim)
+end)
+
+if not successWalk then
+	warn("[ANIM DEBUG] Failed to load WALK animation")
+	return
+end
+
+print("[ANIM DEBUG] Animation tracks loaded")
 
 idleTrack.Priority = Enum.AnimationPriority.Movement
 walkTrack.Priority = Enum.AnimationPriority.Movement
@@ -35,47 +78,57 @@ walkTrack.Priority = Enum.AnimationPriority.Movement
 idleTrack.Looped = true
 walkTrack.Looped = true
 
--- State control
-local function stopAll()
-	if idleTrack.IsPlaying then idleTrack:Stop() end
-	if walkTrack.IsPlaying then walkTrack:Stop() end
-end
-
-local function onStateChanged(_, newState)
-	-- Stop animations for non-ground states
-	if newState == Enum.HumanoidStateType.Jumping
-	or newState == Enum.HumanoidStateType.Freefall
-	or newState == Enum.HumanoidStateType.Climbing
-	or newState == Enum.HumanoidStateType.Swimming
-	or newState == Enum.HumanoidStateType.Seated
-	or newState == Enum.HumanoidStateType.Dead then
-		stopAll()
+-- Utility
+local function stopAll(reason)
+	if idleTrack.IsPlaying then
+		idleTrack:Stop()
+		print("[ANIM DEBUG] Idle stopped:", reason)
+	end
+	if walkTrack.IsPlaying then
+		walkTrack:Stop()
+		print("[ANIM DEBUG] Walk stopped:", reason)
 	end
 end
 
-humanoid.StateChanged:Connect(onStateChanged)
+-- State changes
+humanoid.StateChanged:Connect(function(old, new)
+	print("[ANIM DEBUG] State changed:", old.Name, "→", new.Name)
 
--- Movement handling
-game:GetService("RunService").RenderStepped:Connect(function()
+	if new == Enum.HumanoidStateType.Jumping
+	or new == Enum.HumanoidStateType.Freefall
+	or new == Enum.HumanoidStateType.Climbing
+	or new == Enum.HumanoidStateType.Swimming
+	or new == Enum.HumanoidStateType.Seated
+	or new == Enum.HumanoidStateType.Dead then
+		stopAll("state change")
+	end
+end)
+
+-- Movement handler
+RunService.RenderStepped:Connect(function()
 	if humanoid.Health <= 0 then return end
 
 	local state = humanoid:GetState()
 	local moving = humanoid.MoveDirection.Magnitude > 0
 
-	-- Only allow animations on ground
+	-- Ground-only logic
 	if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.RunningNoPhysics then
 		if moving then
 			if not walkTrack.IsPlaying then
-				stopAll()
+				stopAll("switch to walk")
 				walkTrack:Play()
+				print("[ANIM DEBUG] Walk animation PLAYING")
 			end
 		else
 			if not idleTrack.IsPlaying then
-				stopAll()
+				stopAll("switch to idle")
 				idleTrack:Play()
+				print("[ANIM DEBUG] Idle animation PLAYING")
 			end
 		end
 	else
-		stopAll()
+		stopAll("not ground state")
 	end
 end)
+
+print("[ANIM DEBUG] Animation controller fully initialized")
