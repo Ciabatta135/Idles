@@ -1,0 +1,81 @@
+-- Custom Animation Controller (LocalScript)
+-- Place in StarterCharacterScripts
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local character = script.Parent
+local humanoid = character:WaitForChild("Humanoid")
+local animator = humanoid:WaitForChild("Animator")
+
+-- Disable default Roblox animations
+local animate = character:FindFirstChild("Animate")
+if animate then
+	animate.Disabled = true
+end
+
+-- Animation IDs
+local IDLE_ID = "rbxassetid://121357243986533"
+local WALK_ID = "rbxassetid://93206157668596"
+
+-- Create animations
+local idleAnim = Instance.new("Animation")
+idleAnim.AnimationId = IDLE_ID
+
+local walkAnim = Instance.new("Animation")
+walkAnim.AnimationId = WALK_ID
+
+-- Load tracks
+local idleTrack = animator:LoadAnimation(idleAnim)
+local walkTrack = animator:LoadAnimation(walkAnim)
+
+idleTrack.Priority = Enum.AnimationPriority.Movement
+walkTrack.Priority = Enum.AnimationPriority.Movement
+
+idleTrack.Looped = true
+walkTrack.Looped = true
+
+-- State control
+local function stopAll()
+	if idleTrack.IsPlaying then idleTrack:Stop() end
+	if walkTrack.IsPlaying then walkTrack:Stop() end
+end
+
+local function onStateChanged(_, newState)
+	-- Stop animations for non-ground states
+	if newState == Enum.HumanoidStateType.Jumping
+	or newState == Enum.HumanoidStateType.Freefall
+	or newState == Enum.HumanoidStateType.Climbing
+	or newState == Enum.HumanoidStateType.Swimming
+	or newState == Enum.HumanoidStateType.Seated
+	or newState == Enum.HumanoidStateType.Dead then
+		stopAll()
+	end
+end
+
+humanoid.StateChanged:Connect(onStateChanged)
+
+-- Movement handling
+game:GetService("RunService").RenderStepped:Connect(function()
+	if humanoid.Health <= 0 then return end
+
+	local state = humanoid:GetState()
+	local moving = humanoid.MoveDirection.Magnitude > 0
+
+	-- Only allow animations on ground
+	if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.RunningNoPhysics then
+		if moving then
+			if not walkTrack.IsPlaying then
+				stopAll()
+				walkTrack:Play()
+			end
+		else
+			if not idleTrack.IsPlaying then
+				stopAll()
+				idleTrack:Play()
+			end
+		end
+	else
+		stopAll()
+	end
+end)
