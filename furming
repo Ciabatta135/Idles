@@ -1,5 +1,8 @@
 
+wait(5)
+
 task.spawn(function()
+
     local TweenService = game:GetService("TweenService")
     local Players = game:GetService("Players")
     local LP = Players.LocalPlayer
