@@ -16,7 +16,6 @@ task.wait(2)
 workspace:SetAttribute("BeginNetwork", true)
 print("Systems Ready - Running Modules")
 
-wait(5)
 
 task.spawn(function()
 
