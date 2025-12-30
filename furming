@@ -1,0 +1,164 @@
+
+task.spawn(function()
+    local TweenService = game:GetService("TweenService")
+    local Players = game:GetService("Players")
+    local LP = Players.LocalPlayer
+
+    -- SETTINGS
+    _G.FollowBoss = true
+    local SPEED = 90 -- Speed of the tween
+    local DISTANCE_BEHIND = 8 -- How many studs behind the boss's back to stay
+
+    -- 1. Find YOUR character in workspace.Characters.Server.Players
+    local function getMyBody()
+        local folder = workspace.Characters.Server.Players
+        for _, v in pairs(folder:GetChildren()) do
+            -- Matches based on your DisplayName or Name
+            if v:FindFirstChild("Humanoid") and (v.Humanoid.DisplayName == LP.DisplayName or v.Name == LP.Name) then
+                return v
+            end
+        end
+        return folder:GetChildren()[1] -- Fallback
+    end
+
+    -- 2. Find the BOSS in workspace.Characters.Server.NPCs
+    local function getBossBody()
+        local npcFolder = workspace.Characters.Server.NPCs
+        local npcs = npcFolder:GetChildren()
+        return npcs[1] -- Assumes the boss is the first NPC in the folder
+    end
+
+    task.spawn(function()
+        print("Back-Stabber Active")
+        
+        while _G.FollowBoss do
+            local myBody = getMyBody()
+            local bossBody = getBossBody()
+            
+            if myBody and bossBody then
+                local myRoot = myBody:FindFirstChild("HumanoidRootPart")
+                local bossRoot = bossBody:FindFirstChild("HumanoidRootPart")
+                
+                if myRoot and bossRoot then
+                    -- CALCULATE SPEED
+                    local dist = (myRoot.Position - bossRoot.Position).Magnitude
+                    local duration = dist / SPEED
+                    if duration < 0.1 then duration = 0.1 end
+
+                    -- BYPASS: Anchor prevents the server from pulling you back
+                    myRoot.Anchored = true
+                    
+                    -- GOAL: Boss CFrame offset by DISTANCE_BEHIND on the Z axis
+                    -- This puts you exactly where his back is facing
+                    local targetPos = bossRoot.CFrame * CFrame.new(0, 0, DISTANCE_BEHIND)
+                    
+                    local tween = TweenService:Create(myRoot, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+                        CFrame = targetPos
+                    })
+                    
+                    tween:Play()
+                    
+                    -- Wait and cancel to refresh to the boss's new position
+                    task.wait(0.1)
+                    tween:Cancel() 
+                end
+            else
+                task.wait(0.5)
+            end
+        end
+        
+        -- Clean up: Unanchor so you can move normally again
+        local finalBody = getMyBody()
+        if finalBody and finalBody:FindFirstChild("HumanoidRootPart") then
+            finalBody.HumanoidRootPart.Anchored = false
+        end
+        print("Back-Stabber Stopped")
+    end)
+end)
+
+task.wait(1.5)
+
+task.spawn(function ()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local npcFolder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("NPCs")
+
+_G.AutoRetry = true
+
+-- Function to handle the retry remote
+local function fireRetry()
+    local remote = ReplicatedStorage:WaitForChild("NetworkComm"):WaitForChild("RaidsService"):WaitForChild("RetryRaid_Method")
+    print("Boss is dead! Firing Retry Raid...")
+    
+    local success, result = pcall(function()
+        return remote:InvokeServer()
+    end)
+    
+    if success then
+        print("Retry Sent! Server response: " .. tostring(result))
+    else
+        warn("Failed to fire Retry remote: " .. tostring(result))
+    end
+end
+
+task.spawn(function()
+        print("Monitoring Boss Death...")
+        
+        while _G.AutoRetry do
+            -- Check if there are any NPCs in the folder
+            local bosses = npcFolder:GetChildren()
+            
+            if #bosses == 0 then
+                -- The folder is empty, meaning the boss was defeated/removed
+                fireRetry()
+                
+                -- IMPORTANT: Wait a few seconds for the next raid to load 
+                -- so we don't spam the remote while the screen is black.
+                task.wait(5) 
+            else
+                -- If the boss is still there, check if its health is 0
+                local boss = bosses[1]
+                local hum = boss:FindFirstChild("Humanoid")
+                
+                if hum and hum.Health <= 0 then
+                    fireRetry()
+                    task.wait(5)
+                end
+            end
+            
+            task.wait(1) -- Check once per second
+        end
+    end)
+end)
+
+
+
+task.spawn(function()
+    local player = game.Players.LocalPlayer
+
+    local NetworkComm = game:GetService("ReplicatedStorage")
+        :WaitForChild("NetworkComm")
+        :WaitForChild("InventoryService")
+        :WaitForChild("FocusItem_Method")
+
+    while true do
+        -- Re-fetch buttons each loop (safer if UI updates)
+        local buttons = player.PlayerGui.HUD.ImageLabel:GetDescendants()
+
+        for _, button in ipairs(buttons) do
+            if button:IsA("ImageButton") then
+                if firesignal then
+                    firesignal(button.MouseButton1Down)
+                    firesignal(button.MouseButton1Up)
+                    firesignal(button.MouseButton1Click)
+                    firesignal(button.Activated)
+                end
+            end
+        end
+
+        -- Always invoke with arg = 1
+        NetworkComm:InvokeServer(1)
+
+        task.wait(0.5) -- delay between loops
+    end
+end)
+
