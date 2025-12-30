@@ -1,3 +1,36 @@
+local function waitForRealCharacter()
+    local LP = game:GetService("Players").LocalPlayer
+    local serverPlayersFolder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("Players")
+    
+    local myBody = nil
+    print("Waiting for character to appear in Server folder...")
+    
+
+    repeat
+        task.wait(0.5)
+        for _, v in pairs(serverPlayersFolder:GetChildren()) do
+            -- Matches based on your DisplayName (which is safer in random-name games)
+            if v:FindFirstChild("Humanoid") and (v.Humanoid.DisplayName == LP.DisplayName or v.Name == LP.Name) then
+                myBody = v
+                break
+            end
+        end
+    until myBody
+    
+
+    local root = myBody:WaitForChild("HumanoidRootPart", 10)
+    
+    if root then
+        print("Character fully loaded: " .. myBody.Name)
+        return myBody
+    else
+        warn("Character model found, but HumanoidRootPart failed to load!")
+        return nil
+    end
+end
+
+
+local character = waitForRealCharacter()
 
 wait(5)
 
