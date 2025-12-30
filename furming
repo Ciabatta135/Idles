@@ -1,36 +1,4 @@
-local function waitForRealCharacter()
-    local LP = game:GetService("Players").LocalPlayer
-    local serverPlayersFolder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("Players")
-    
-    local myBody = nil
-    print("Waiting for character to appear in Server folder...")
-    
 
-    repeat
-        task.wait(0.5)
-        for _, v in pairs(serverPlayersFolder:GetChildren()) do
-            -- Matches based on your DisplayName (which is safer in random-name games)
-            if v:FindFirstChild("Humanoid") and (v.Humanoid.DisplayName == LP.DisplayName or v.Name == LP.Name) then
-                myBody = v
-                break
-            end
-        end
-    until myBody
-    
-
-    local root = myBody:WaitForChild("HumanoidRootPart", 10)
-    
-    if root then
-        print("Character fully loaded: " .. myBody.Name)
-        return myBody
-    else
-        warn("Character model found, but HumanoidRootPart failed to load!")
-        return nil
-    end
-end
-
-
-local character = waitForRealCharacter()
 
 wait(5)
 
@@ -43,7 +11,7 @@ task.spawn(function()
     -- SETTINGS
     _G.FollowBoss = true
     local SPEED = 90 -- Speed of the tween
-    local DISTANCE_BEHIND = 8 -- How many studs behind the boss's back to stay
+    local DISTANCE_BEHIND = 14 -- How many studs behind the boss's back to stay
 
     -- 1. Find YOUR character in workspace.Characters.Server.Players
     local function getMyBody()
@@ -112,7 +80,7 @@ task.spawn(function()
     end)
 end)
 
-task.wait(1.5)
+task.wait(5)
 
 task.spawn(function ()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
