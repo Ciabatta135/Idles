@@ -1,0 +1,117 @@
+-- 1. SYSTEM INITIALIZATION
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+print("Waiting for game to load...")
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+-- This waits until the game's internal systems are ready
+local netComm = ReplicatedStorage:WaitForChild("NetworkComm")
+while not netComm:GetAttribute("Ready") do task.wait() end
+while not ReplicatedStorage:WaitForChild("DevFlags"):GetAttribute("UserID") do task.wait() end
+
+-- Final safety wait to prevent UI glitching
+task.wait(2) 
+
+workspace:SetAttribute("BeginNetwork", true)
+print("Systems Ready - Running Modules")
+
+-- Remotes
+local InventoryRemote = netComm:WaitForChild("InventoryService"):WaitForChild("FocusItem_Method")
+local RetryRemote = netComm:WaitForChild("RaidsService"):WaitForChild("RetryRaid_Method")
+
+-- SETTINGS
+_G.FollowBoss = true
+_G.AutoRetry = true
+_G.AutoCombat = true
+
+-- HELPER FUNCTIONS
+local function getMyBody()
+    local folder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("Players")
+    for _, v in pairs(folder:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and (v.Humanoid.DisplayName == LP.DisplayName or v.Name == LP.Name) then
+            return v
+        end
+    end
+    return nil
+end
+
+local function getBossBody()
+    local npcFolder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("NPCs")
+    local npcs = npcFolder:GetChildren()
+    return npcs[1] 
+end
+
+-- 2. MOVEMENT (Back-Stabber)
+task.spawn(function()
+    local TweenService = game:GetService("TweenService")
+    local SPEED = 90 
+    local DISTANCE_BEHIND = 14 
+
+    while _G.FollowBoss do
+        local myBody = getMyBody()
+        local bossBody = getBossBody()
+        
+        if myBody and bossBody then
+            local myRoot = myBody:FindFirstChild("HumanoidRootPart")
+            local bossRoot = bossBody:FindFirstChild("HumanoidRootPart")
+            
+            if myRoot and bossRoot then
+                local dist = (myRoot.Position - bossRoot.Position).Magnitude
+                local duration = dist / SPEED
+                if duration < 0.1 then duration = 0.1 end
+
+                myRoot.Anchored = true
+                local targetPos = bossRoot.CFrame * CFrame.new(0, 0, DISTANCE_BEHIND)
+                
+                local tween = TweenService:Create(myRoot, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetPos})
+                tween:Play()
+                task.wait(0.1)
+                tween:Cancel() 
+            end
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+-- 3. AUTO-RETRY LOGIC
+task.spawn(function()
+    local npcFolder = workspace:WaitForChild("Characters"):WaitForChild("Server"):WaitForChild("NPCs")
+    while _G.AutoRetry do
+        local bosses = npcFolder:GetChildren()
+        if #bosses == 0 or (bosses[1]:FindFirstChild("Humanoid") and bosses[1].Humanoid.Health <= 0) then
+            pcall(function() RetryRemote:InvokeServer() end)
+            task.wait(5) 
+        end
+        task.wait(1)
+    end
+end)
+
+-- 4. COMBAT LOOP (Skills & Focus Item Only)
+task.spawn(function()
+    while _G.AutoCombat do
+        -- SPAM HUD BUTTONS (Skills)
+        local hud = LP.PlayerGui:FindFirstChild("HUD")
+        if hud then
+            local buttons = hud.ImageLabel:GetDescendants()
+            for _, button in ipairs(buttons) do
+                if button:IsA("ImageButton") then
+                    -- Fires the click signal if your executor supports it
+                    if firesignal then
+                        firesignal(button.Activated)
+                        firesignal(button.MouseButton1Click)
+                    end
+                end
+            end
+        end
+
+        -- FOCUS ITEM REMOTE (Spamming the focus item/tool)
+        pcall(function()
+            InventoryRemote:InvokeServer(1)
+        end)
+        
+        task.wait(0.5) -- Loop speed
+    end
+end)
