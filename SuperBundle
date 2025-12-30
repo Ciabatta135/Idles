@@ -1,8 +1,8 @@
 local player = game.Players.LocalPlayer
 
 -- Your animation IDs
-local IDLE_ID = "rbxassetid://121357243986533"
-local MOVE_ID = "rbxassetid://93206157668596" -- used for walk + run
+local IDLE_ID = "rbxassetid://104238959556624"
+local MOVE_ID = "rbxassetid://85811471336028" -- used for walk + run
 
 local function apply(character)
 	local animate = character:WaitForChild("Animate")
