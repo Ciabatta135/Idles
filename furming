@@ -180,7 +180,7 @@ task.spawn(function()
         end
 
         -- Wait 0.2 seconds before continuing
-        task.wait(0.6)
+        task.wait(0.06)
 
         -- Step 2: Fire signals on ALL ImageButtons
         buttons = player.PlayerGui.HUD.ImageLabel:GetDescendants()
