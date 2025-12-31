@@ -26,7 +26,7 @@ task.spawn(function()
     -- SETTINGS
     _G.FollowBoss = true
     local SPEED = 90 -- Speed of the tween
-    local DISTANCE_BEHIND = 14 -- How many studs behind the boss's back to stay
+    local DISTANCE_BEHIND = 18 -- How many studs behind the boss's back to stay
 
     -- 1. Find YOUR character in workspace.Characters.Server.Players
     local function getMyBody()
