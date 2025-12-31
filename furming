@@ -149,6 +149,30 @@ task.spawn(function()
     end)
 end)
 
-task.spawn(function() local player = game.Players.LocalPlayer local NetworkComm = game:GetService("ReplicatedStorage") :WaitForChild("NetworkComm") :WaitForChild("InventoryService") :WaitForChild("FocusItem_Method") while true do -- Re-fetch buttons each loop (safer if UI updates) local buttons = player.PlayerGui.HUD.ImageLabel:GetDescendants() for _, button in ipairs(buttons) do if button:IsA("ImageButton") then if firesignal then firesignal(button.MouseButton1Down) firesignal(button.MouseButton1Up) firesignal(button.MouseButton1Click) firesignal(button.Activated) end end end -- Always invoke with arg = 1 NetworkComm:InvokeServer(1) task.wait(1.5) -- delay between loops end end)
-
+task.spawn(function() 
+    local player = game.Players.LocalPlayer 
+    local NetworkComm = game:GetService("ReplicatedStorage"):WaitForChild("NetworkComm"):WaitForChild("InventoryService"):WaitForChild("FocusItem_Method") 
+    
+    while true do 
+        -- Re-fetch buttons each loop (safer if UI updates) 
+        local buttons = player.PlayerGui.HUD.ImageLabel:GetDescendants() 
+        
+        -- Loop backwards from the total count down to 1
+        for i = #buttons, 1, -1 do 
+            local button = buttons[i]
+            if button:IsA("ImageButton") then 
+                if firesignal then 
+                    firesignal(button.MouseButton1Down) 
+                    firesignal(button.MouseButton1Up) 
+                    firesignal(button.MouseButton1Click) 
+                    firesignal(button.Activated) 
+                end 
+            end 
+        end 
+        
+        -- Always invoke with arg = 1 
+        NetworkComm:InvokeServer(1) 
+        task.wait(1.5) -- delay between loops 
+    end 
+end)
 
