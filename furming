@@ -177,7 +177,7 @@ task.spawn(function()
         -- Always invoke with arg = 1
         NetworkComm:InvokeServer(1)
 
-        task.wait(0.7) -- delay between loops
+        task.wait(1.5) -- delay between loops
     end
 end)
 
