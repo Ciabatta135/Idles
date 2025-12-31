@@ -153,20 +153,29 @@ end)
 
 task.spawn(function()
     local player = game.Players.LocalPlayer
-
     local NetworkComm = game:GetService("ReplicatedStorage")
         :WaitForChild("NetworkComm")
         :WaitForChild("InventoryService")
         :WaitForChild("FocusItem_Method")
 
     while true do
-        -- Re-fetch buttons each loop (safer if UI updates)
+        -- 1. Focus the item first so the server knows what you are holding
+        pcall(function()
+            NetworkComm:InvokeServer(1)
+        end)
+        
+        task.wait(0.1) -- Small gap to let the server register the focus
+
+        -- 2. Fetch buttons
         local buttons = player.PlayerGui.HUD.ImageLabel:GetDescendants()
 
         for _, button in ipairs(buttons) do
-            if button:IsA("ImageButton") then
+            if button:IsA("ImageButton") and button.Visible then
                 if firesignal then
+                    -- 3. Simulate a REAL click sequence
+                    -- Firing them all at once is what causes the "No Damage" glitch
                     firesignal(button.MouseButton1Down)
+                    task.wait(0.05) -- Tiny delay mimics a real finger press
                     firesignal(button.MouseButton1Up)
                     firesignal(button.MouseButton1Click)
                     firesignal(button.Activated)
@@ -174,10 +183,6 @@ task.spawn(function()
             end
         end
 
-        -- Always invoke with arg = 1
-        NetworkComm:InvokeServer(1)
-
-        task.wait(1.5) -- delay between loops
+        task.wait(1.4) -- Total loop delay (adjust to match weapon speed)
     end
 end)
-
