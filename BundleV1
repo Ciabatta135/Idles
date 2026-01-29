@@ -1,0 +1,264 @@
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+
+local IDLE_ANIMS = {
+	{Name = "Pocket Hands Idle", ID = "rbxassetid://104238959556624"},
+	{Name = "Stylized Idle", ID = "rbxassetid://0"}, 
+	{Name = "Sukuna Idle", ID = "rbxassetid://109728747582911"},
+    {Name = "Hands in pocket Idle", ID = "rbxassetid://80472053097767"},
+    {Name = "Crossed arms Idle", ID = "rbxassetid://80472053097767"},
+    {Name = "Honored Gojo Idle", ID = "rbxassetid://136479330379442"},
+    {Name = "Fashion pose", ID = "rbxassetid://100634313288959"},
+    {Name = "Gojo Fight Pose Stance Idle", ID = "rbxassetid://104988081206489"},
+    {Name = "Sukuna Fight Pose Stance Idle", ID = "rbxassetid://100622328324630"},
+    {Name = "Villain Pose", ID = "rbxassetid://121480327509940"},
+    {Name = "Warrior Pose", ID = "rbxassetid://72492959889389"},
+    {Name = "Anime Idle Style", ID = "rbxassetid://76112704556520"},
+    {Name = "Forsaken Guest Idle", ID = "rbxassetid://109463619255004"},
+    {Name = "Magician Hat fix Idle", ID = "rbxassetid://139433213852503"},
+    {Name = "Golden Freddy Idle", ID = "rbxassetid://130138018340371"},
+    {Name = "Sans Idle", ID = "rbxassetid://123627677663418"},
+    {Name = "Star Platinum Idle", ID = "rbxassetid://79226414724980"},
+    {Name = "Jojo Star Platinum", ID = "rbxassetid://124523762626151"},
+    {Name = "John Doe Idle", ID = "rbxassetid://121357243986533"},
+    {Name = "Random Idle", ID = "rbxassetid://129245317392856"},
+    {Name = "Crazy Gojo Idle", ID = "rbxassetid://87679574888451"},
+    {Name = "Skibidi Idle", ID = "rbxassetid://87449122230956"},
+}
+
+local WALK_ANIMS = {
+	{Name = "Geto Walk", ID = "rbxassetid://85811471336028"},
+	{Name = "Aura walk", ID = "rbxassetid://136382802509224"}, 
+	{Name = "Sigma Walk", ID = "rbxassetid://111244432669902"},
+    {Name = "1x1x1x1 Walk", ID = "rbxassetid://138379855143069"},
+    {Name = "Sad Walk", ID = "rbxassetid://122248011313710"},
+    {Name = "Penguin Walk", ID = "rbxassetid://90805593420505"},
+    {Name = "/e Walk", ID = "rbxassetid://133487116712279"},
+    {Name = "Confident Walk", ID = "rbxassetid://93080497127998"},
+    {Name = "SpringTrap Walk", ID = "rbxassetid://128642113698397"},
+    {Name = "Mahoraga Walk", ID = "rbxassetid://118959209918644"},
+    {Name = "Gojo Walk", ID = "rbxassetid://72284053953674"},
+    {Name = "Gues Ahh Walk", ID = "rbxassetid://102269417125238"},
+    {Name = "Gojo Silly Walk", ID = "rbxassetid://82260970223217"},
+    {Name = "normal Run/Walk", ID = "rbxassetid://81303326756383"},
+    {Name = "SquidQuardWalk", ID = "rbxassetid://82365330773489"},
+}
+
+local currentIdle = IDLE_ANIMS[1].ID
+local currentWalk = WALK_ANIMS[1].ID
+
+-- // THEME CONFIGURATION // --
+local THEME = {
+	MainBG = Color3.fromRGB(20, 20, 25),
+	HeaderStart = Color3.fromRGB(45, 35, 70),
+	HeaderEnd = Color3.fromRGB(30, 25, 50),
+	Stroke = Color3.fromRGB(60, 50, 90),
+	ItemBG = Color3.fromRGB(30, 30, 40),
+	Text = Color3.fromRGB(240, 240, 240),
+	Accent = Color3.fromRGB(180, 80, 255),
+	ToggleOn = Color3.fromRGB(0, 255, 128),
+	ToggleOff = Color3.fromRGB(50, 50, 60),
+	InputBG = Color3.fromRGB(15, 15, 20)
+}
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AnimationHub"
+ScreenGui.Parent = (gethui and gethui()) or CoreGui
+
+
+local Window = Instance.new("Frame")
+Window.Name = "MainWindow"
+Window.Parent = ScreenGui
+Window.BackgroundColor3 = THEME.MainBG
+Window.Position = UDim2.new(0.5, -150, 0.4, -200)
+Window.Size = UDim2.new(0, 300, 0, 400) -- Made it wider for the two columns
+Window.BorderSizePixel = 0
+
+local WCorner = Instance.new("UICorner")
+WCorner.CornerRadius = UDim.new(0, 8)
+WCorner.Parent = Window
+
+local WStroke = Instance.new("UIStroke")
+WStroke.Color = THEME.Stroke
+WStroke.Thickness = 2
+WStroke.Parent = Window
+
+
+local function MakeDraggable(topbarObject, object)
+	local dragging, dragInput, dragStart, startPos
+	topbarObject.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = object.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+	topbarObject.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+
+local Header = Instance.new("Frame")
+Header.Parent = Window
+Header.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BorderSizePixel = 0
+local HCorner = Instance.new("UICorner")
+HCorner.CornerRadius = UDim.new(0, 8)
+HCorner.Parent = Header
+local HGradient = Instance.new("UIGradient")
+HGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, THEME.HeaderStart), ColorSequenceKeypoint.new(1, THEME.HeaderEnd)}
+HGradient.Rotation = 45
+HGradient.Parent = Header
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = Header
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Size = UDim2.new(1, 0, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "ANIMATION CHANGER"
+TitleLabel.TextColor3 = THEME.Text
+TitleLabel.TextSize = 14
+MakeDraggable(Header, Window)
+
+
+local function UpdateCharacterAnims()
+	local character = LocalPlayer.Character
+	if not character then return end
+	local animate = character:FindFirstChild("Animate")
+	if not animate then return end
+
+	local function setID(folderName, animID)
+		local folder = animate:FindFirstChild(folderName)
+		if folder then
+			folder:ClearAllChildren()
+			local anim = Instance.new("Animation")
+			anim.Name = folderName.."Override"
+			anim.AnimationId = animID
+			local weight = Instance.new("NumberValue", anim)
+			weight.Name = "Weight"
+			weight.Value = 10
+			anim.Parent = folder
+		end
+	end
+
+	setID("idle", currentIdle)
+	setID("walk", currentWalk)
+	setID("run", currentWalk)
+
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+	end
+end
+
+
+local MainScroll = Instance.new("ScrollingFrame")
+MainScroll.Parent = Window
+MainScroll.Position = UDim2.new(0, 5, 0, 40)
+MainScroll.Size = UDim2.new(1, -10, 1, -45)
+MainScroll.BackgroundTransparency = 1
+MainScroll.ScrollBarThickness = 2
+MainScroll.CanvasSize = UDim2.new(0, 0, 3, 0)
+
+local SplitFrame = Instance.new("Frame")
+SplitFrame.Parent = MainScroll
+SplitFrame.Size = UDim2.new(1, 0, 1, 0)
+SplitFrame.BackgroundTransparency = 1
+
+local LeftColumn = Instance.new("Frame")
+LeftColumn.Name = "IdleColumn"
+LeftColumn.Parent = SplitFrame
+LeftColumn.Size = UDim2.new(0.48, 0, 1, 0)
+LeftColumn.BackgroundTransparency = 1
+
+local RightColumn = Instance.new("Frame")
+RightColumn.Name = "WalkColumn"
+RightColumn.Parent = SplitFrame
+RightColumn.Position = UDim2.new(0.52, 0, 0, 0)
+RightColumn.Size = UDim2.new(0.48, 0, 1, 0)
+RightColumn.BackgroundTransparency = 1
+
+local function AddLayout(parent)
+	local layout = Instance.new("UIListLayout")
+	layout.Parent = parent
+	layout.Padding = UDim.new(0, 5)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+end
+AddLayout(LeftColumn)
+AddLayout(RightColumn)
+
+local function CreateHeader(text, parent)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1, 0, 0, 25)
+	l.BackgroundTransparency = 1
+	l.Font = Enum.Font.GothamBold
+	l.Text = text:upper()
+	l.TextColor3 = THEME.Accent
+	l.TextSize = 13
+	l.Parent = parent
+end
+
+CreateHeader("Idle Anims", LeftColumn)
+CreateHeader("Walk Anims", RightColumn)
+
+
+local function CreateAnimButton(name, id, parent, isIdle)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 30)
+	btn.BackgroundColor3 = THEME.ItemBG
+	btn.Font = Enum.Font.GothamSemibold
+	btn.Text = name
+	btn.TextColor3 = THEME.Text
+	btn.TextSize = 12
+	btn.Parent = parent
+	
+	local bc = Instance.new("UICorner")
+	bc.CornerRadius = UDim.new(0, 4)
+	bc.Parent = btn
+
+	btn.MouseButton1Click:Connect(function()
+		if isIdle then currentIdle = id else currentWalk = id end
+		UpdateCharacterAnims()
+		
+		-- Visual feedback
+		btn.BackgroundColor3 = THEME.Accent
+		task.wait(0.1)
+		btn.BackgroundColor3 = THEME.ItemBG
+	end)
+end
+
+
+for _, data in ipairs(IDLE_ANIMS) do
+	CreateAnimButton(data.Name, data.ID, LeftColumn, true)
+end
+
+for _, data in ipairs(WALK_ANIMS) do
+	CreateAnimButton(data.Name, data.ID, RightColumn, false)
+end
+
+
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)
+	UpdateCharacterAnims()
+end)
+
+
+
+if LocalPlayer.Character then UpdateCharacterAnims() end
